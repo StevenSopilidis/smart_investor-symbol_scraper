@@ -2,6 +2,5 @@ package domain
 
 type ScrapeResult struct {
 	Ticker       string
-	Exchange     string
-	CurrentPrice float32
+	CurrentPrice float64
 }
