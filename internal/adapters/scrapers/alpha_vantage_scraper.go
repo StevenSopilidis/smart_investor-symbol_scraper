@@ -82,6 +82,8 @@ func (s *AlphaVantageScraper) Scrape(results chan<- domain.ScrapeResult) {
 				continue
 			}
 
+			fmt.Printf("---> Scrapred stick: %s with price: %s", ticker, priceStr)
+
 			results <- domain.ScrapeResult{
 				Ticker:       ticker,
 				CurrentPrice: price,
