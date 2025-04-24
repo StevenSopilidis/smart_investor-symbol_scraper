@@ -14,6 +14,7 @@ type Config struct {
 	OtelCollectorAddr  string        `mapstructure:"OTEL_COLLECTOR_STRUCTURE"`
 	ScrapeInterval     time.Duration `mapstructure:"SCRAPE_INTERVAL"`
 	SymbolTopic        string        `mapstructure:"SYMBOL_TOPIC"`
+	KafkaBroker        string        `mapstructure:"KAFKA_BROKER"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -35,6 +36,7 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.BindEnv("SERVICE_NAME")
 	viper.BindEnv("SCRAPE_INTERVAL")
 	viper.BindEnv("SYMBOL_TOPIC")
+	viper.BindEnv("KAFKA_BROKER")
 
 	err = viper.Unmarshal(&config)
 	return config, err

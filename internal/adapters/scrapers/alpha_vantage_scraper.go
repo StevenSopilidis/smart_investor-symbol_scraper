@@ -65,8 +65,10 @@ func (s *AlphaVantageScraper) Scrape(results chan<- domain.ScrapeResult) {
 		var wg sync.WaitGroup
 		quoteResp := make(chan GlobalQuoteResponse, len(s.symbols))
 		for _, symbol := range s.symbols {
-			wg.Add(1)
-			go s.fetchQuote(symbol.Ticker, &wg, quoteResp)
+			if symbol.Active {
+				wg.Add(1)
+				go s.fetchQuote(symbol.Ticker, &wg, quoteResp)
+			}
 		}
 
 		wg.Wait()
@@ -92,4 +94,8 @@ func (s *AlphaVantageScraper) Scrape(results chan<- domain.ScrapeResult) {
 
 		time.Sleep(s.scrapeInterval)
 	}
+}
+
+func (s *AlphaVantageScraper) Shutdown() {
+	s.running = false
 }
