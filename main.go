@@ -53,4 +53,6 @@ func main() {
 			}
 		}
 	}(context.Background())
+
+	wg.Wait()
 }
