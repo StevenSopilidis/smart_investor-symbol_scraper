@@ -1,13 +1,20 @@
 package publishers
 
 import (
+	"context"
+	"encoding/json"
+	"log"
+	"sync"
+
 	"github.com/IBM/sarama"
 	"github.com/stevensopi/smart_investor/symbol_scraper/internal/adapters/config"
+	"github.com/stevensopi/smart_investor/symbol_scraper/internal/core/domain"
 	"github.com/stevensopi/smart_investor/symbol_scraper/internal/core/ports"
 )
 
 type KafkaPublisher struct {
 	producer sarama.AsyncProducer
+	topic    string
 }
 
 func NewKafkaPublisher(config config.Config) (ports.IPublisher, error) {
@@ -24,6 +31,7 @@ func NewKafkaPublisher(config config.Config) (ports.IPublisher, error) {
 
 	return &KafkaPublisher{
 		producer: producer,
+		topic:    config.SymbolTopic,
 	}, nil
 }
 
@@ -39,4 +47,26 @@ func (p *KafkaPublisher) Publish(key string, data []byte, topic string) {
 	}
 
 	p.producer.Input() <- message
+}
+
+func RunPublisher(
+	ctx context.Context,
+	data <-chan domain.ScrapeResult,
+	p ports.IPublisher,
+	topic string,
+	wg *sync.WaitGroup,
+) {
+	for {
+		select {
+		case msg := <-data:
+			data, err := json.Marshal(msg)
+			if err != nil {
+				log.Printf("---> Could not encode data: %s\n", err)
+			}
+			p.Publish(msg.Ticker, data, topic)
+		case <-ctx.Done():
+			wg.Done()
+			return
+		}
+	}
 }

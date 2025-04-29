@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"sync"
 
@@ -38,21 +37,7 @@ func main() {
 		log.Fatalf("---> Could not create kafka publisher: %s\n", err)
 	}
 
-	go func(ctx context.Context) {
-		for {
-			select {
-			case msg := <-results:
-				data, err := json.Marshal(msg)
-				if err != nil {
-					log.Printf("---> Could not encode data: %s\n", err)
-				}
-				publisher.Publish(msg.Ticker, data, config.SymbolTopic)
-			case <-ctx.Done():
-				wg.Done()
-				return
-			}
-		}
-	}(context.Background())
+	go publishers.RunPublisher(context.Background(), results, publisher, config.SymbolTopic, &wg)
 
 	wg.Wait()
 }
