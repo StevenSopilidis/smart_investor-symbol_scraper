@@ -3,6 +3,7 @@ package scrapers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -22,6 +23,7 @@ type AlphaVantageScraper struct {
 	symbols        []domain.Symbol
 	running        bool
 	scrapeInterval time.Duration
+	scrapeEndpoint string
 }
 
 func NewAlphaVantageScraper(config config.Config, symbols []domain.Symbol) *AlphaVantageScraper {
@@ -30,6 +32,7 @@ func NewAlphaVantageScraper(config config.Config, symbols []domain.Symbol) *Alph
 		symbols:        symbols,
 		running:        true,
 		scrapeInterval: config.ScrapeInterval,
+		scrapeEndpoint: config.ScrapeEndpoint,
 	}
 }
 
@@ -40,8 +43,8 @@ func (s *AlphaVantageScraper) fetchQuote(
 ) {
 	defer wg.Done()
 	url := fmt.Sprintf(
-		"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",
-		symbol, s.apiKey,
+		"http://%s/query?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",
+		s.scrapeEndpoint, symbol, s.apiKey,
 	)
 
 	resp, err := http.Get(url)
@@ -51,9 +54,15 @@ func (s *AlphaVantageScraper) fetchQuote(
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("---> Error reading response body for symbol %s: %v\n", symbol, err)
+		return
+	}
+
 	var quote GlobalQuoteResponse
-	if err := json.NewDecoder(resp.Body).Decode(&quote); err != nil {
-		fmt.Printf("Error decoding response for symbol %s: %v\n", symbol, err)
+	if err := json.Unmarshal(body, &quote); err != nil {
+		log.Printf("---> Error decoding response for symbol %s: %v\n", symbol, err)
 		return
 	}
 
@@ -80,11 +89,9 @@ func (s *AlphaVantageScraper) Scrape(results chan<- domain.ScrapeResult) {
 
 			price, err := strconv.ParseFloat(priceStr, 64)
 			if err != nil {
-				fmt.Printf("Error parsing price for %s: %v\n", ticker, err)
+				log.Printf("---> Error parsing price for %s: %v\n", ticker, err)
 				continue
 			}
-
-			fmt.Printf("---> Scrapred stick: %s with price: %s", ticker, priceStr)
 
 			results <- domain.ScrapeResult{
 				Ticker:       ticker,
