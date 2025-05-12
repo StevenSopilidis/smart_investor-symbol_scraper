@@ -16,6 +16,7 @@ type Config struct {
 	SymbolTopic        string        `mapstructure:"SYMBOL_TOPIC"`
 	KafkaBroker        string        `mapstructure:"KAFKA_BROKER"`
 	ScrapeEndpoint     string        `mapstructure:"SCRAPE_ENDPOINT"`
+	SymbolManagerAddr  string        `mapstructure:"SYMBOL_MANAGER_ADDR"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
@@ -39,6 +40,7 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.BindEnv("SYMBOL_TOPIC")
 	viper.BindEnv("KAFKA_BROKER")
 	viper.BindEnv("SCRAPE_ENDPOINT")
+	viper.BindEnv("SYMBOL_MANAGER_ADDR")
 
 	err = viper.Unmarshal(&config)
 	return config, err

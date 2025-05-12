@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/stevensopi/smart_investor/symbol_scraper/internal/adapters/client"
 	"github.com/stevensopi/smart_investor/symbol_scraper/internal/adapters/config"
 	"github.com/stevensopi/smart_investor/symbol_scraper/internal/adapters/publishers"
 	"github.com/stevensopi/smart_investor/symbol_scraper/internal/adapters/scrapers"
@@ -17,12 +18,18 @@ func main() {
 		log.Fatalf("---> Could not load config: %s\n", err)
 	}
 
-	scaper := scrapers.NewAlphaVantageScraper(config, []domain.Symbol{
-		{
-			Ticker: "NVDA",
-			Active: true,
-		},
-	})
+	// get active symbols to scraper
+	client, err := client.NewSymbolManagerClient(config)
+	if err != nil {
+		log.Fatalf("Could not create client to symbol manager service %s\n", err)
+	}
+
+	symbols, err := client.GetActiveSymbols(context.Background())
+	if err != nil {
+		log.Fatal("Could not get active symbols %s\n", err)
+	}
+
+	scaper := scrapers.NewAlphaVantageScraper(config, symbols)
 	results := make(chan domain.ScrapeResult, 100)
 	var wg sync.WaitGroup
 	wg.Add(2)
